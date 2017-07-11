@@ -26,24 +26,17 @@ using v8::FunctionCallbackInfo;
 namespace node_cvc4 {
 
 inline Local <String>
-to_javascript(Isolate *isolate, const std::u16string &s) {
-    return v8::String::NewFromTwoByte(isolate, (const uint16_t *) s.data(),
-                                      v8::String::NewStringType::kNormalString, s.length());
-}
-inline Local <String>
 to_javascript(Isolate *isolate, const std::string &s) {
     return v8::String::NewFromOneByte(isolate, (const uint8_t *) s.data(),
                                       v8::String::NewStringType::kNormalString, s.length());
 }
-
-std::basic_string<char16_t>
+std::string
 v8_to_string(const Local <v8::String> &s) {
-    int length = s->Length();
-    char16_t *buffer = new char16_t[length];
+    int length = s->Utf8Length();
+    char *buffer = new char[length];
 
-    s->Write((uint16_t *) buffer, 0, -1, v8::String::NO_NULL_TERMINATION);
-    std::basic_string<char16_t> stdstring = std::basic_string<char16_t>(buffer,
-                                                                        (size_t) length);
+    s->WriteUtf8(buffer, -1, nullptr, v8::String::NO_NULL_TERMINATION);
+    std::string stdstring = std::string(buffer, (size_t) length);
     delete[] buffer;
     return stdstring;
 }
@@ -108,16 +101,48 @@ static v8::Local<v8::Promise> Schedule(v8::Isolate *isolate, Callable&& _task) {
     return promise;
 }
 
-static std::string do_solve()
+struct solver_call
+{
+    std::string input;
+    bool with_assignments;
+    uint32_t time_limit;
+
+    std::string operator()() const;
+};
+
+static void maybe_dump_models(CVC4::SmtEngine& engine, CVC4::Command* command, std::ostream & ostream)
+{
+    CVC4::Result res;
+    CVC4::CheckSatCommand* cs = dynamic_cast<CVC4::CheckSatCommand*>(command);
+    if(cs != NULL)
+        res = cs->getResult();
+    CVC4::QueryCommand* q = dynamic_cast<CVC4::QueryCommand*>(command);
+    if(q != NULL)
+        res = q->getResult();
+    if (res.isNull())
+        return;
+
+    std::unique_ptr<CVC4::Command> c;
+    if (res.asSatisfiabilityResult() == CVC4::Result::SAT ||
+        (res.isUnknown() && res.whyUnknown() == CVC4::Result::INCOMPLETE)) {
+        c.reset(new CVC4::GetModelCommand());
+    }
+    if (c)
+        c->invoke(&engine, ostream);
+}
+
+std::string solver_call::operator()() const
 {
     CVC4::ExprManager expr_manager;
     static std::mutex option_lock;
-    static const char * const opt_strings[] = {
+    char time_limit_opt[30];
+    const char * opt_strings[5] = {
         "cvc4",
-        "--dump-models",
-        "--lang"
-        "smt"
+        "--lang", "smt",
+        "--cpu-time",
+        time_limit_opt
     };
+    std::snprintf(time_limit_opt, sizeof(time_limit_opt), "--tlimit=%u", time_limit);
 
     CVC4::Options &options(const_cast<CVC4::Options &>(expr_manager.getOptions()));
     {
@@ -128,8 +153,8 @@ static std::string do_solve()
 
     CVC4::SmtEngine engine(&expr_manager);
 
-    CVC4::parser::ParserBuilder parser_builder(&expr_manager, "<http>", options);
-    std::istringstream istream;
+    CVC4::parser::ParserBuilder parser_builder(&expr_manager, "<node-cvc4>", options);
+    std::istringstream istream(input);
     std::ostringstream ostream;
     parser_builder
             .withInputLanguage(CVC4::language::input::LANG_SMTLIB_V2)
@@ -143,6 +168,8 @@ static std::string do_solve()
         if (command == nullptr)
             continue;
         command->invoke(&engine, ostream);
+        if (with_assignments)
+            maybe_dump_models(engine, command.get(), ostream);
     }
 
     return ostream.str();
@@ -150,7 +177,27 @@ static std::string do_solve()
 
 static void solve(const FunctionCallbackInfo<Value>& args)
 {
-    args.GetReturnValue().Set(Schedule(args.GetIsolate(), do_solve));
+    v8::Isolate *isolate = args.GetIsolate();
+
+    if (args.Length() != 3) {
+        isolate->ThrowException(exception_to_v8(isolate, "Invalid number of arguments to .solve()"));
+        return;
+    }
+
+    v8::MaybeLocal<v8::String> input = args[0]->ToString(isolate->GetCurrentContext());
+    if (input.IsEmpty())
+        return;
+    v8::MaybeLocal<v8::Boolean> with_assignments = args[1]->ToBoolean(isolate->GetCurrentContext());
+    if (with_assignments.IsEmpty())
+        return;
+    v8::MaybeLocal<v8::Uint32> time_limit = args[2]->ToUint32(isolate->GetCurrentContext());
+    if (time_limit.IsEmpty())
+        return;
+
+    solver_call call { v8_to_string(input.ToLocalChecked()),
+        with_assignments.ToLocalChecked()->Value(),
+        time_limit.ToLocalChecked()->Value() };
+    args.GetReturnValue().Set(Schedule(args.GetIsolate(), std::move(call)));
 }
 
 static void register_module(Local<Object> exports, Local<Value>, void *)

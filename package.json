@@ -2,10 +2,14 @@
   "name": "cvc4",
   "version": "0.1.0",
   "description": "Node.js API to use CVC4 as a library, in process",
-  "main": "index.js",
+  "main": "lib/solver.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Giovanni Campagna <gcampagn@cs.stanford.edu>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "bindings": "^1.2.1",
+    "smtlib": "^0.1.0"
+  }
 }

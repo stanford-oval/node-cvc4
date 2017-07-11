@@ -8,9 +8,10 @@
       ['OS=="linux"', {
         'defines': [
         ],
-        'cflags_cc!': ['-fno-exceptions'],
+        'cflags_cc!': ['-fno-rtti', '-fno-exceptions'],
         'cflags_cc': [
           '-Wall',
+          '-frtti',
           '-fexceptions',
         ],
         'libraries': [
