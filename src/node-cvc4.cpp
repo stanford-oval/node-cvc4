@@ -6,7 +6,7 @@
 #include <string>
 #include <type_traits>
 
-#include <node/node.h>
+#include <node.h>
 #include <uv.h>
 
 #include <cvc4/cvc4.h>
