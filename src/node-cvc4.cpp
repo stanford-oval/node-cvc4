@@ -27,8 +27,10 @@ namespace node_cvc4 {
 
 inline Local <String>
 to_javascript(Isolate *isolate, const std::string &s) {
-    return v8::String::NewFromOneByte(isolate, (const uint8_t *) s.data(),
-                                      v8::String::NewStringType::kNormalString, s.length());
+    Local<String> ret;
+    v8::String::NewFromOneByte(isolate, (const uint8_t *) s.data(),
+                               v8::NewStringType::kNormal, s.length()).ToLocal(&ret);
+    return ret;
 }
 std::string
 v8_to_string(const Local <v8::String> &s) {
@@ -43,7 +45,10 @@ v8_to_string(const Local <v8::String> &s) {
 
 v8::Local <v8::Value>
 exception_to_v8(Isolate *isolate, const char *error_msg) {
-    Local <String> v8_message = v8::String::NewFromOneByte(isolate, (uint8_t *) error_msg);
+    std::string error_msg_str{error_msg};
+    Local<String> v8_message;
+    v8::String::NewFromOneByte(isolate, (const uint8_t *) error_msg_str.data(),
+                               v8::NewStringType::kNormal, error_msg_str.length()).ToLocal(&v8_message);
     return v8::Exception::Error(v8_message);
 }
 
