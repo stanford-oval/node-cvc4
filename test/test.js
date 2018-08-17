@@ -1,22 +1,28 @@
+"use strict";
+
+process.on('unhandledRejection', (up) => { throw up; });
+
 const assert = require('assert');
 const smt = require('smtlib');
 
+require('..');
 const Solver = require('../lib/solver');
 
 function test1() {
     let solver = new Solver('QF_ALL_SUPPORTED');
-    solver.add(smt.DeclareFun('x', [], 'Bool'))
-    solver.add(smt.DeclareFun('y', [], 'Bool'))
+    solver.add(smt.DeclareFun('x', [], 'Bool'));
+    solver.add(smt.DeclareFun('y', [], 'Bool'));
     solver.assert(smt.And(smt.Or('x', 'y'), smt.Not('x'), smt.Not('y')));
     return solver.checkSat().then(([sat, assignment]) => assert(!sat)).catch((e) => {
         console.error('FAILED: ' + e.message);
+        throw e;
     });
 }
 function test2() {
     let solver = new Solver('QF_ALL_SUPPORTED');
     solver.enableAssignments();
-    solver.add(smt.DeclareFun('x', [], 'Bool'))
-    solver.add(smt.DeclareFun('y', [], 'Bool'))
+    solver.add(smt.DeclareFun('x', [], 'Bool'));
+    solver.add(smt.DeclareFun('y', [], 'Bool'));
     solver.assert(smt.And(smt.Or('x', 'y'), 'x', 'y'));
     return solver.checkSat().then(([sat, assignment]) => {
         assert(sat);
@@ -30,8 +36,8 @@ function test3() {
     let solver = new Solver('QF_ALL_SUPPORTED');
     solver.enableAssignments();
     solver.add(smt.DeclareDatatype('MyType', ['C1', 'C2']));
-    solver.add(smt.DeclareFun('x', [], 'Bool'))
-    solver.add(smt.DeclareFun('y', [], 'Bool'))
+    solver.add(smt.DeclareFun('x', [], 'Bool'));
+    solver.add(smt.DeclareFun('y', [], 'Bool'));
     solver.assert(smt.And(smt.Or('x', 'y'), 'x', 'y'));
     return solver.checkSat().then(([sat, assignment]) => {
         assert(sat);
