@@ -1,0 +1,20 @@
+branches:
+  except:
+  - "/^wip/"
+sudo: required
+services:
+- docker
+language: node_js
+node_js:
+- '8'
+before_install:
+- yarn global add greenkeeper-lockfile@1
+before_script: greenkeeper-lockfile-update
+after_script: greenkeeper-lockfile-upload
+install:
+- docker build -f test/Dockerfile -t node-cvc4 .
+script:
+- docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn lint"
+- docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn test"
+after_success:
+- docker run node-cvc4 /bin/sh "cd node-cvc4 ; yarn coverage"
