@@ -15,6 +15,4 @@ install:
 - docker build -f test/Dockerfile -t node-cvc4 .
 script:
 - docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn lint"
-- docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn test"
-after_success:
-- docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn coverage"
+- docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn test && yarn coverage"
