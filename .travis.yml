@@ -15,4 +15,4 @@ install:
 - docker build -f test/Dockerfile -t node-cvc4 .
 script:
 - docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn lint"
-- docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn test && yarn coverage"
+- docker run -e "TRAVIS=$TRAVIS" -e "TRAVIS_JOB_ID=$TRAVIS_JOB_ID" -e "TRAVIS_BRANCH=$TRAVIS_BRANCH" -e "TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST" node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn test && yarn coverage"
