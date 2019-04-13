@@ -1,6 +1,6 @@
 {
   "name": "cvc4",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Node.js API to use CVC4 as a library, in process",
   "main": "lib/solver.js",
   "author": "Giovanni Campagna <gcampagn@cs.stanford.edu>",

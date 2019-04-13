@@ -1,0 +1,10 @@
+0.1.2
+=====
+
+* Fix build with nodejs 10.*
+* Updated dependencies
+
+0.1.1
+=====
+
+* First release
