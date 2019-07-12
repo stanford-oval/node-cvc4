@@ -11,7 +11,7 @@
     "smtlib": "^0.1.1"
   },
   "devDependencies": {
-    "coveralls": "^3.0.0",
+    "coveralls": "3.0.4",
     "eslint": "^6.0.0",
     "nyc": "^14.0.0"
   },
