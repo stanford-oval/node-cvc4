@@ -1,18 +1,17 @@
+dist: bionic
 branches:
   except:
   - "/^wip/"
-sudo: required
-services:
-- docker
+sudo: true
 language: node_js
 node_js:
 - '8'
+- '10'
 before_install:
-- yarn global add greenkeeper-lockfile@1
-before_script: greenkeeper-lockfile-update
-after_script: greenkeeper-lockfile-upload
-install:
-- docker build -f test/Dockerfile -t node-cvc4 .
+- sudo apt-get update -q -y
+- sudo apt-get install -y cvc4 libcvc4-dev
 script:
-- docker run node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn lint"
-- docker run -e "TRAVIS=$TRAVIS" -e "TRAVIS_JOB_ID=$TRAVIS_JOB_ID" -e "TRAVIS_BRANCH=$TRAVIS_BRANCH" -e "TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST" node-cvc4 /bin/sh -c "cd node-cvc4 ; yarn test && yarn coverage"
+- yarn lint
+- yarn test
+after_success:
+- yarn coverage
